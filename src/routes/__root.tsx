@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -15,6 +15,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import { Navbar } from "@/components/Navbar";
 import { Footer } from "@/components/Footer";
 import { PageTransition } from "@/components/PageTransition";
+import { LoadingScreen } from "@/components/LoadingScreen";
 
 function NotFoundComponent() {
   return (
@@ -124,21 +125,39 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+function RootContent() {
+  // Hanya gunakan state ini untuk trigger saat web PERTAMA KALI dibuka (refresh)
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // Setelah render pertama selesai, matikan status awal (trigger loading jalan)
+  useEffect(() => {
+    setIsInitialLoad(false);
+  }, []);
+
+  return (
+    <div className="relative min-h-screen flex flex-col bg-background text-foreground overflow-x-hidden">
+      
+      {/* Sekarang hanya menerima isInitialLoad. Pindah halaman gak akan nge-trigger animasi ini lagi */}
+      <LoadingScreen isLoading={isInitialLoad} />
+
+      <Navbar />
+      <main className="flex-1">
+        <PageTransition>
+          <Outlet />
+        </PageTransition>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
-        <div className="min-h-screen flex flex-col bg-background text-foreground">
-          <Navbar />
-          <main className="flex-1">
-            <PageTransition>
-              <Outlet />
-            </PageTransition>
-          </main>
-          <Footer />
-        </div>
+        <RootContent />
       </ThemeProvider>
     </QueryClientProvider>
   );
